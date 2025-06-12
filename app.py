@@ -44,7 +44,9 @@ class QueryResponse(BaseModel):
 
 # Initialize FastAPI app
 app = FastAPI(title="RAG Query API", description="API for querying the RAG knowledge base")
-
+@app.get("/api/ask")
+def ask(question: str):
+    return {"answer": "Mock response for: " + question}
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
