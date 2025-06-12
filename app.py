@@ -44,9 +44,29 @@ class QueryResponse(BaseModel):
 
 # Initialize FastAPI app
 app = FastAPI(title="RAG Query API", description="API for querying the RAG knowledge base")
-@app.get("/api/ask")
-def ask(question: str):
-    return {"answer": "Mock response for: " + question}
+@app.post("/api/", response_model=QuestionResponse)
+async def handle_query(req: QuestionRequest):
+    question = req.question
+
+    # Placeholder image handling
+    if req.image:
+        try:
+            decoded = base64.b64decode(req.image)
+            # Save image, run OCR, etc.
+            print("📷 Image received and decoded.")
+        except Exception as e:
+            print("❌ Failed to decode image.")
+
+    # 🔁 Replace this logic with real QA chain
+    dummy_answer = "You must use `gpt-3.5-turbo-0125`..."
+    dummy_links = [
+        {"url": "https://discourse.onlinedegree.iitm.ac.in/t/ga5-question-8-clarification/155939/4",
+         "text": "Use the model that’s mentioned in the question."},
+        {"url": "https://discourse.onlinedegree.iitm.ac.in/t/ga5-question-8-clarification/155939/3",
+         "text": "Tokenizer explanation used by Prof. Anand."}
+    ]
+
+    return {"answer": dummy_answer, "links": dummy_links}
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
