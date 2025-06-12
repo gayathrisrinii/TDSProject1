@@ -16,6 +16,7 @@ from fastapi.responses import JSONResponse
 import uvicorn
 import traceback
 from dotenv import load_dotenv
+from openai import OpenAI
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -55,7 +56,13 @@ async def handle_query(request: QueryRequest):
         cursor = conn.cursor()
 
         # Step 2: Perform basic similarity search (replace with real embeddings logic if needed)
-        cursor.execute("SELECT content, url FROM discourse_chunks ORDER BY RANDOM() LIMIT ?", (MAX_RESULTS,))
+        cursor.execute("""
+    SELECT content, url
+    FROM discourse_chunks
+    WHERE content LIKE ?
+    ORDER BY LENGTH(content) DESC
+    LIMIT 10
+""", (f"%{request.question.split()[0]}%",))
         discourse_rows = cursor.fetchall()
 
         cursor.execute("SELECT content, original_url FROM markdown_chunks ORDER BY RANDOM() LIMIT ?", (MAX_RESULTS,))
@@ -66,8 +73,19 @@ async def handle_query(request: QueryRequest):
         sources = [{"url": row[1], "text": row[0][:100] + "..."} for row in rows]
 
         # Step 3: Fake an answer based on chunks (replace with GPT call)
-        context_text = "\n\n".join(context_chunks)
-        answer = f"This is a mock answer for: '{request.question}'\n\nBased on:\n{context_text[:500]}..."
+        #context_text = "\n\n".join(context_chunks)
+        #answer = f"This is a mock answer for: '{request.question}'\n\nBased on:\n{context_text[:500]}..."
+        openai.api_key = os.getenv("OPENAI_API_KEY")
+
+        context = "\n\n".join(top_chunks)
+        response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "Answer based only on the following context."},
+            {"role": "user", "content": f"Question: {request.question}\n\nContext:\n{context}"}
+        ]
+        )
+        answer = response["choices"][0]["message"]["content"]
 
         return {
             "answer": answer,
