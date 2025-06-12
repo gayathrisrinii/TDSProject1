@@ -79,11 +79,11 @@ async def handle_query(request: QueryRequest):
         #answer = f"This is a mock answer for: '{request.question}'\n\nBased on:\n{context_text[:500]}..."
         openai.api_key = os.getenv("OPENAI_API_KEY")
 
-        context = "\n\n".join(top_chunks)
+        context = "\n\n".join(context_chunks)
         response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=[
-            {"role": "system", "content": "Answer based only on the following context."},
+            {"role": "system", "content": "You are a helpful assistant that answers student questions using only the context provided."},
             {"role": "user", "content": f"Question: {request.question}\n\nContext:\n{context}"}
         ]
         )
