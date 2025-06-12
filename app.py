@@ -85,7 +85,7 @@ async def handle_query(request: QueryRequest):
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "You are a helpful assistant that answers student questions using only the context provided."},
+                {"role": "system", "content": "You are a helpful TA. Only answer using the context."},
                 {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {request.question}"}
             ]
         )
