@@ -80,14 +80,17 @@ async def handle_query(request: QueryRequest):
         openai.api_key = os.getenv("OPENAI_API_KEY")
 
         context = "\n\n".join(context_chunks)
-        response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": "You are a helpful assistant that answers student questions using only the context provided."},
-            {"role": "user", "content": f"Question: {request.question}\n\nContext:\n{context}"}
-        ]
+        client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant that answers student questions using only the context provided."},
+                {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {request.question}"}
+            ]
         )
-        answer = response["choices"][0]["message"]["content"]
+
+        answer = response.choices[0].message.content
 
         return {
             "answer": answer,
