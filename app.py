@@ -55,11 +55,13 @@ async def handle_query(request: QueryRequest):
         cursor = conn.cursor()
 
         # Step 2: Perform basic similarity search (replace with real embeddings logic if needed)
-        cursor.execute(
-            "SELECT chunk, source_url FROM chunks ORDER BY RANDOM() LIMIT ?",
-            (MAX_RESULTS,)
-        )
-        rows = cursor.fetchall()
+        cursor.execute("SELECT chunk, source_url FROM discourse_chunks ORDER BY RANDOM() LIMIT ?", (MAX_RESULTS,))
+        discourse_rows = cursor.fetchall()
+
+        cursor.execute("SELECT chunk, source_url FROM markdown_chunks ORDER BY RANDOM() LIMIT ?", (MAX_RESULTS,))
+        markdown_rows = cursor.fetchall()
+
+        rows = discourse_rows + markdown_rows
         context_chunks = [row[0] for row in rows]
         sources = [{"url": row[1], "text": row[0][:100] + "..."} for row in rows]
 
