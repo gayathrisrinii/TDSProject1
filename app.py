@@ -44,29 +44,41 @@ class QueryResponse(BaseModel):
 
 # Initialize FastAPI app
 app = FastAPI(title="RAG Query API", description="API for querying the RAG knowledge base")
-@app.post("/api/", response_model=QuestionResponse)
-async def handle_query(req: QuestionRequest):
-    question = req.question
+@app.post("/api/", response_model=QueryResponse)
+async def handle_query(request: QueryRequest):
+    try:
+        # Step 1: Connect to the database (each time — safe for Vercel)
+        if not os.path.exists(DB_PATH):
+            raise FileNotFoundError(f"{DB_PATH} not found on server.")
 
-    # Placeholder image handling
-    if req.image:
-        try:
-            decoded = base64.b64decode(req.image)
-            # Save image, run OCR, etc.
-            print("📷 Image received and decoded.")
-        except Exception as e:
-            print("❌ Failed to decode image.")
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
 
-    # 🔁 Replace this logic with real QA chain
-    dummy_answer = "You must use `gpt-3.5-turbo-0125`..."
-    dummy_links = [
-        {"url": "https://discourse.onlinedegree.iitm.ac.in/t/ga5-question-8-clarification/155939/4",
-         "text": "Use the model that’s mentioned in the question."},
-        {"url": "https://discourse.onlinedegree.iitm.ac.in/t/ga5-question-8-clarification/155939/3",
-         "text": "Tokenizer explanation used by Prof. Anand."}
-    ]
+        # Step 2: Perform basic similarity search (replace with real embeddings logic if needed)
+        cursor.execute(
+            "SELECT chunk, source_url FROM chunks ORDER BY RANDOM() LIMIT ?",
+            (MAX_RESULTS,)
+        )
+        rows = cursor.fetchall()
+        context_chunks = [row[0] for row in rows]
+        sources = [{"url": row[1], "text": row[0][:100] + "..."} for row in rows]
 
-    return {"answer": dummy_answer, "links": dummy_links}
+        # Step 3: Fake an answer based on chunks (replace with GPT call)
+        context_text = "\n\n".join(context_chunks)
+        answer = f"This is a mock answer for: '{request.question}'\n\nBased on:\n{context_text[:500]}..."
+
+        return {
+            "answer": answer,
+            "links": sources[:3]  # Return top 3 links
+        }
+
+    except Exception as e:
+        logger.error("Error in /api/: %s", str(e))
+        return JSONResponse(
+            status_code=500,
+            content={"answer": f"Internal server error: {str(e)}", "links": []}
+        )
+
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
