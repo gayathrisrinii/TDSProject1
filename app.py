@@ -81,16 +81,18 @@ async def handle_query(request: QueryRequest):
 
         context = "\n\n".join(context_chunks)
         client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        try:
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "You are a helpful TA. Only answer using the context."},
+                    {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {request.question}"}
+                ]
+            )
 
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a helpful TA. Only answer using the context."},
-                {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {request.question}"}
-            ]
-        )
-
-        answer = response.choices[0].message.content
+            answer = response.choices[0].message.content
+        except openai.RateLimitError as e:
+            answer = "You’ve hit your OpenAI quota. Please check your billing settings at https://platform.openai.com/account/usage."
 
         return {
             "answer": answer,
