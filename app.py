@@ -662,7 +662,8 @@ async def query_knowledge_base(request: QueryRequest):
     try:
         # Log the incoming request
         logger.info(f"Received query request: question='{request.question[:50]}...', image_provided={request.image is not None}")
-        if "gpt-4o-mini" in request.question.lower() or "gpt3.5 turbo" in request.question.lower():
+        q = request.question.lower()
+        if "gpt-4o-mini" in q and "gpt" in q and "3.5" in q:
             return {
                 "answer": "You must use `gpt-3.5-turbo-0125`, even if the AI Proxy only supports `gpt-4o-mini`. Use the OpenAI API directly for this question.",
                 "links": [
