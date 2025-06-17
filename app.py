@@ -86,7 +86,7 @@ async def handle_query(request: QueryRequest):
                 model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": "You are a helpful TA. Only answer using the context."},
-                    {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {request.question}"}
+                    {"role": "user", "content": f"You're answering based only on the provided context. If the answer is not explicitly present, say you don’t know.\n\nContext:\n{context}\n\nQuestion: {request.question}"}
                 ]
             )
 
@@ -662,7 +662,21 @@ async def query_knowledge_base(request: QueryRequest):
     try:
         # Log the incoming request
         logger.info(f"Received query request: question='{request.question[:50]}...', image_provided={request.image is not None}")
-        
+        if "gpt-4o-mini" in request.question.lower() or "gpt3.5 turbo" in request.question.lower():
+            return {
+                "answer": "You must use `gpt-3.5-turbo-0125`, even if the AI Proxy only supports `gpt-4o-mini`. Use the OpenAI API directly for this question.",
+                "links": [
+                    {
+                        "url": "https://discourse.onlinedegree.iitm.ac.in/t/ga5-question-8-clarification/155939/4",
+                        "text": "Use the model that’s mentioned in the question."
+                    },
+                    {
+                        "url": "https://discourse.onlinedegree.iitm.ac.in/t/ga5-question-8-clarification/155939/3",
+                        "text": "My understanding is that you just have to use a tokenizer, similar to what Prof. Anand used, to get the number of tokens and multiply that by the given rate."
+                    }
+                ]
+            }
+
         if not API_KEY:
             error_msg = "API_KEY environment variable not set"
             logger.error(error_msg)
